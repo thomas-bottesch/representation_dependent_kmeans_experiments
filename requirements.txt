@@ -1,0 +1,5 @@
+wheel
+numpy>=1.10.4
+scipy>=0.16.1
+scikit-learn>=0.18.1
+fcl==0.0.11
