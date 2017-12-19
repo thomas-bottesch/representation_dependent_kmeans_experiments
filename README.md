@@ -7,20 +7,21 @@ Reproducing the results can be done in very few simple steps. All data sets that
 are automatically downloaded when starting the scripts, make sure you have enough disk space. A linux environment is required!
 
 ## Installation of the required python packages
-This should preferably done within a python virtual environment
-First pip should be upgraded to the newest version
+This should preferably be done within a python virtual environment.
+
+First pip should be upgraded to the newest version:
 ```
 pip install --upgrade pip
 ```
 
-Then the required python packages need to be installed. Please do not install the requirements any other way since this
+The required python packages need to be installed. Please do not install the requirements any other way since this
 command ensures that the order of installation is the same as the ordering within the requirements file. 
 ```
 cat requirements.txt | xargs -n 1 -L 1 pip install
 ```
 
 ## Running the experiments in testmode
-Running the experiments can be very time consuming. To do it only on one (very small) data set you can use the test mode.
+Running the experiments can be very time consuming (weeks). To do it only on one (very small) data set you can use the test mode which finishes in a few minutes.
 ```
 cd experiments 
 python do_experiments.py --testmode
