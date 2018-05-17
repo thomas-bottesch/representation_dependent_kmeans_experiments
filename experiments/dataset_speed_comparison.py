@@ -1,7 +1,8 @@
 from __future__ import print_function
-from latex_plots_dataset_speed_comparison import create_plot
+from latex_plots_dataset_speed_comparison import create_table
 from experiment_db import ExperimentDB
 from pprint import pprint
+from collections import OrderedDict
 
 def remove_where_kmeans_not_complete(result_data):
   remove_cluster_data = False
@@ -131,6 +132,31 @@ def result_evaluation_dataset_speed_comparison(out_folder, out_folder_csv):
       print("Result data:")
       pprint(result_data)
     
-    create_plot(output_folder=out_folder_csv,
-                plot_name=plotname,
-                pdata=result_data)
+    algs = OrderedDict()
+    algs["elkan_optimized"] = "$\\varphi_{\\B}$ \\\\ Elkan"
+    algs["pca_elkan"] = "$\\varphi_{p}$ \\\\ Elkan"
+    algs["elkan"] = "Elkan"
+    create_table(output_folder=out_folder_csv,
+                table_name=plotname,
+                pdata=result_data,
+                algs=algs,
+                title="tbl-speed-comparison-elkan")
+    
+    algs = OrderedDict()
+    algs["fast_yinyang"] = "$\\varphi_{\\B}$ \\\\ Yinyang"
+    algs["pca_yinyang"] = "$\\varphi_{p}$ \\\\ Yinyang"
+    algs["yinyang"] = "Yinyang"
+    create_table(output_folder=out_folder_csv,
+                table_name=plotname,
+                pdata=result_data,
+                algs=algs,
+                title="tbl-speed-comparison-yinyang")
+    
+    algs = OrderedDict()
+    algs["kmeans_optimized"] = "$\\varphi_{\\B}$ \\\\ \\kmeans{}"
+    algs["pca_kmeans"] = "$\\varphi_{p}$ \\\\ \\kmeans{}"
+    create_table(output_folder=out_folder_csv,
+                table_name=plotname,
+                pdata=result_data,
+                algs=algs,
+                title="tbl-speed-comparison-optimized")

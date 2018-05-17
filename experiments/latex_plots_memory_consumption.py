@@ -153,8 +153,8 @@ def create_table_data(pdata, algs, general_cells):
             continue
           dur = "%.1f" % float(mem_cons[m])
           
-          if m == best_algo:
-            dur = "\\textbf{%s}" % dur
+          #if m == best_algo:
+          #  dur = "\\textbf{%s}" % dur
           
           data_dict[alg][j] = dur
       
@@ -206,10 +206,12 @@ def create_plot(output_folder=None,
     
     general_plot = general_plot_template.format(py_sub_filename=py_sub_filename)
     algs = OrderedDict()
-    algs["pca_kmeans"] = "$\\varphi_{p}$ \\\\ kmeans"
-    algs["kmeans_optimized"] = "$\\varphi_{\\B}$ \\\\ kmeans"
-    algs["pca_elkan"] = "$\\varphi_{p}$ \\\\ Elkan"
+    algs["kmeans_optimized"] = "$\\varphi_{\\B}$ \\\\ \\kmeans{}"
+    algs["elkan_optimized"] = "$\\varphi_{\\B}$ \\\\ Elkan"
     algs["fast_yinyang"] = "$\\varphi_{\\B}$ \\\\ Yinyang"
+    algs["pca_kmeans"] = "$\\varphi_{p}$ \\\\ \\kmeans{}"
+    algs["pca_yinyang"] = "$\\varphi_{p}$ \\\\ Yinyang"
+    algs["pca_elkan"] = "$\\varphi_{p}$ \\\\ Elkan"
     algs["elkan"] = "Elkan"
     algs["yinyang"] = "Yinyang"
     

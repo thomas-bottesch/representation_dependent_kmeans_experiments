@@ -113,7 +113,7 @@ def do_kmeans(result_q, control_params, params):
         
 def do_evaluations(dataset_path, dataset_name, out_folder, params, clusters):
   
-  algorithms = ["kmeans_optimized", "pca_kmeans", "elkan", "kmeans", "yinyang", "pca_elkan", 'fast_yinyang']
+  algorithms = ["kmeans_optimized", "pca_kmeans", "elkan", "elkan_optimized", "kmeans", "yinyang", "pca_elkan", 'fast_yinyang', 'pca_yinyang']
   
   control_params = OrderedDict()
   control_params['libsvm_dataset_path'] = dataset_path

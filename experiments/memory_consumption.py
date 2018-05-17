@@ -185,7 +185,30 @@ def result_evaluation_memory_consumption(out_folder, out_folder_csv):
           mem_consumption = orthonormal_basis_matrix_mem_consumption \
                             + projected_matrix_samples_mem_consumption \
                             + projected_matrix_clusters_mem_consumption
+        elif alg == 'elkan_optimized':
+          # elkan stores two dense matrices
+          # 1. lower_bound_matrix = no_samples * no_clusters_remaining
+          # 2. distance_between_clusters_matrix = no_clusters_remaining * no_clusters_remaining
+          # 3. projected_matrix_samples = no_samples * dim ( = no_orthonormal_vectors)
+          # 4  projected_matrix_clusters = no_clusters_remaining * dim ( = no_orthonormal_vectors)
           
+          lower_bound_matrix_mem_consumption = no_samples * no_clusters_remaining * size_of_data_storage_element
+          distance_between_clusters_matrix_mem_consumption = no_clusters_remaining * no_clusters_remaining * size_of_data_storage_element
+          
+          annz_projected_matrix_samples = res['block_vector_data']['annz']
+          # annz_projected_matrix_clusters was not measured (we use the annz_projected_matrix_samples as an approximation)
+          annz_projected_matrix_clusters = annz_projected_matrix_samples
+          
+          projected_matrix_samples_mem_consumption = (annz_projected_matrix_samples * no_samples
+                              * (size_of_data_storage_element + size_of_key_storage_element)) \
+                              + ((no_samples + 1) * size_of_pointer_storage_element)
+                              
+          projected_matrix_clusters_mem_consumption = (annz_projected_matrix_clusters * no_clusters_remaining
+                              * (size_of_data_storage_element + size_of_key_storage_element)) \
+                              + ((no_samples + 1) * size_of_pointer_storage_element)
+          
+          mem_consumption = lower_bound_matrix_mem_consumption + distance_between_clusters_matrix_mem_consumption \
+                            + projected_matrix_samples_mem_consumption + projected_matrix_clusters_mem_consumption
         elif alg == 'kmeans_optimized':
           # kmeans_optimized stores a projected_matrix_samples + projected_matrix_clusters
           # 1. projected_matrix_samples = no_samples * dim ( = no_orthonormal_vectors)
@@ -231,6 +254,33 @@ def result_evaluation_memory_consumption(out_folder, out_folder_csv):
                               + ((no_samples + 1) * size_of_pointer_storage_element)
           
           mem_consumption = lower_bound_group_matrix_mem_consumption \
+                            + projected_matrix_samples_mem_consumption \
+                            + projected_matrix_clusters_mem_consumption
+        elif alg == 'pca_yinyang':
+          # yinyang stores a dense matrix to keep a lower bound to every of the t groups + a orthonormal_basis_matrix + projected_matrix
+          # 1. lower_bound_group_matrix = no_samples * t
+          # 2. orthonormal_basis_matrix = no_orthonormal_vectors * orthonormal_basis_matrix_dim
+          # 3. projected_matrix_samples = no_samples * dim ( = no_orthonormal_vectors)
+          # 4  projected_matrix_clusters = no_clusters_remaining * dim ( = no_orthonormal_vectors)
+          
+          t = no_clusters_remaining / 10
+          
+          lower_bound_group_matrix_mem_consumption = no_samples * t * size_of_data_storage_element
+          
+          orthonormal_basis_matrix_mem_consumption = (res['truncated_svd']['no_components']
+                                                      * res['truncated_svd']['no_features']
+                                                      * (size_of_data_storage_element + size_of_key_storage_element)) \
+                                                      + ((res['truncated_svd']['no_components'] + 1) * size_of_pointer_storage_element)
+          projected_matrix_samples_mem_consumption = (no_samples * res['truncated_svd']['no_components']
+                              * (size_of_data_storage_element + size_of_key_storage_element)) \
+                              + ((no_samples + 1) * size_of_pointer_storage_element)
+                              
+          projected_matrix_clusters_mem_consumption = (no_clusters_remaining * res['truncated_svd']['no_components']
+                              * (size_of_data_storage_element + size_of_key_storage_element)) \
+                              + ((no_samples + 1) * size_of_pointer_storage_element)
+          
+          mem_consumption = lower_bound_group_matrix_mem_consumption   \
+                            + orthonormal_basis_matrix_mem_consumption \
                             + projected_matrix_samples_mem_consumption \
                             + projected_matrix_clusters_mem_consumption
         else:

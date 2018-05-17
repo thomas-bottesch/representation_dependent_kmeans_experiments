@@ -1,6 +1,8 @@
 import numpy as np
 from collections import OrderedDict
-general_plot_template = \
+import copy
+
+general_table_template = \
 """\\documentclass[]{{article}}
 \\usepackage{{booktabs}}
 \\usepackage{{array}}
@@ -46,7 +48,7 @@ FLOAT_FORMAT = "%.4f"
 import os
 import re
 
-def get_plot_data(dat):
+def get_table_data(dat):
   algorithms = dat.keys()
   algorithms.sort()
   
@@ -66,21 +68,36 @@ def get_plot_data(dat):
 
 #def create_dataset_entries(dataset_name, ):
 
-def complete_algorithms(pdata, algs):
+def complete_algorithms(pdata, algs, remove=False):
     datasets = pdata.keys()
     for i in range(len(datasets)):
       dataset = datasets[i]
       no_clusters_list = pdata[dataset]['results'].keys()
       no_clusters_list.sort()
       
+
+        
+      
       for j in range(len(no_clusters_list)):
-        no_clusters = no_clusters_list[j]       
-        algorithms, durations, stddevs = get_plot_data(pdata[dataset]['results'][no_clusters])
+        no_clusters = no_clusters_list[j]
+        
+        if remove:
+          algos_avail = pdata[dataset]['results'][no_clusters]
+          alg_keys = algos_avail.keys()
+          for alg in alg_keys:
+            if alg == 'kmeans':
+              continue
+            if alg not in algs:
+              del algos_avail[alg]
+          
+        algorithms, durations, stddevs = get_table_data(pdata[dataset]['results'][no_clusters])
+        print algorithms, durations, stddevs
         for alg in algorithms:
           if alg == 'kmeans':
             continue
           if alg not in algs:
             algs[alg] = alg
+              
 
 
 def make_columns_same_length(data_list, algs, general_cells):
@@ -90,18 +107,18 @@ def make_columns_same_length(data_list, algs, general_cells):
   for column in algs:
     column_lengths[column] = 0
   
-  for plot_dict in data_list:
-    for column in plot_dict['data_dict']:
-      for string_element in plot_dict['data_dict'][column]:
+  for table_dict in data_list:
+    for column in table_dict['data_dict']:
+      for string_element in table_dict['data_dict'][column]:
         if len(string_element) > column_lengths[column]:
           column_lengths[column] = len(string_element)
   
-  for plot_dict in data_list:
-    for column in plot_dict['data_dict']:
-      for i in range(len(plot_dict['data_dict'][column])):
-        string_element = plot_dict['data_dict'][column][i]
+  for table_dict in data_list:
+    for column in table_dict['data_dict']:
+      for i in range(len(table_dict['data_dict'][column])):
+        string_element = table_dict['data_dict'][column][i]
         if len(string_element) < column_lengths[column]:
-          plot_dict['data_dict'][column][i] = string_element.ljust(column_lengths[column])
+          table_dict['data_dict'][column][i] = string_element.ljust(column_lengths[column])
   
     
 def create_table_data(pdata, algs, general_cells):
@@ -117,8 +134,9 @@ def create_table_data(pdata, algs, general_cells):
       for k in general_cells:
         data_dict[k] = ["(na)"] * len(no_clusters_list)
       for k in algs:
-        data_dict[k] = ["(na)"] * len(algs)
-        
+        data_dict[k] = ["(na)"] * len(no_clusters_list)
+      
+      print data_dict
       for j in range(len(no_clusters_list)):
         if j == 0:
           data_dict['dataset'][j] = ("\\multirow{%d}{*}{\\specialcell[c]{%s \\\\{\\scriptsize %d / %d / %d}}}"
@@ -137,25 +155,29 @@ def create_table_data(pdata, algs, general_cells):
           dataset_type = 'big'
         
         data_dict['num_clusters'][j] = str(no_clusters)       
-        algorithms, durations, stddevs = get_plot_data(pdata[dataset]['results'][no_clusters])
+        algorithms, durations, stddevs = get_table_data(pdata[dataset]['results'][no_clusters])
         best_algo = np.argmax(durations)
         for m in range(len(algorithms)):
           alg = algorithms[m]
           if alg == 'kmeans':
             continue
-          dur = "%.1f" % float(durations[m])
-          
+          dur = ("%.1f" % float(durations[m])) + ("$\\pm$%.1f" % float(stddevs[m]))
+
           if m == best_algo:
             dur = "\\textbf{%s}" % dur
-          
-          data_dict[alg][j] = dur
+
+          try:
+            data_dict[alg][j] = dur
+          except:
+            print alg, data_dict.keys(), data_dict[alg], j
+            raise
       
-      plot_dict = {'data_dict': data_dict,
+      table_dict = {'data_dict': data_dict,
                    'dataset_type': dataset_type,
                    'input_dimension': pdata[dataset]['infos']['input_dimension'],
                    'input_samples': pdata[dataset]['infos']['input_samples'],
                    'input_annz': pdata[dataset]['infos']['input_annz']}
-      data_list.append(plot_dict)
+      data_list.append(table_dict)
       
     make_columns_same_length(data_list, algs, general_cells)
     
@@ -163,15 +185,15 @@ def create_table_data(pdata, algs, general_cells):
     dataset_type_lines['small'] = None
     dataset_type_lines['medium'] = None
     dataset_type_lines['big'] = None
-    for plot_dict in data_list:
-      if dataset_type_lines[plot_dict['dataset_type']] is None:
-        dataset_type_lines[plot_dict['dataset_type']] = ""
-      no_lines = len(plot_dict['data_dict']['dataset'])
+    for table_dict in data_list:
+      if dataset_type_lines[table_dict['dataset_type']] is None:
+        dataset_type_lines[table_dict['dataset_type']] = ""
+      no_lines = len(table_dict['data_dict']['dataset'])
       for i in range(no_lines):
         line_list = []
-        for column in plot_dict['data_dict']:
-          line_list.append(plot_dict['data_dict'][column][i])
-        dataset_type_lines[plot_dict['dataset_type']] += " & ".join(line_list) + " \\\\\n"
+        for column in table_dict['data_dict']:
+          line_list.append(table_dict['data_dict'][column][i])
+        dataset_type_lines[table_dict['dataset_type']] += " & ".join(line_list) + " \\\\\n"
     
     types_to_delete = []
     for dataset_type in dataset_type_lines:
@@ -183,11 +205,14 @@ def create_table_data(pdata, algs, general_cells):
     
     return dataset_type_lines
     
-def create_plot(output_folder=None,
-                plot_name=None,
-                pdata=None):
-     
-    pname = "tbl-speed-comparison"
+def create_table(output_folder=None,
+                table_name=None,
+                pdata=None,
+                algs=OrderedDict(),
+                title="tbl-speed-comparison"):
+    
+    pdata = copy.deepcopy(pdata)
+    pname = title
     py_general_filename_tex = pname + "-single.tex"
     py_sub_filename = pname
     py_sub_filename_tex = pname + ".tex"
@@ -196,18 +221,8 @@ def create_plot(output_folder=None,
     general_cells['dataset'] = "Dataset \\\\  num / dim / annz"
     general_cells['num_clusters'] = "k"
     
-    general_plot = general_plot_template.format(py_sub_filename=py_sub_filename)
-    algs = OrderedDict()
-    algs["pca_kmeans"] = "$\\varphi_{p}$ \\\\ kmeans"
-    algs["kmeans_optimized"] = "$\\varphi_{\\B}$ \\\\ kmeans"
-    algs["pca_elkan"] = "$\\varphi_{p}$ \\\\ Elkan"
-    algs["fast_yinyang"] = "$\\varphi_{\\B}$ \\\\ Yinyang"
-    algs["elkan"] = "Elkan"
-    algs["yinyang"] = "Yinyang"
-    
-    complete_algorithms(pdata, algs)
-    
-    no_columns = (len(general_cells) + len(algs)) * "c"
+    general_table = general_table_template.format(py_sub_filename=py_sub_filename)   
+    complete_algorithms(pdata, algs, remove=True)
     
     header_cells = OrderedDict()
     for k in general_cells.keys():
@@ -222,6 +237,8 @@ def create_plot(output_folder=None,
     dataset_type_lines = create_table_data(pdata, algs, general_cells)
     header_cells_str = " & ".join(header_cell_list)
     
+    no_columns = len(general_cells) * "c" + "r" * len(algs)
+      
     dataset_type_lines_keys = dataset_type_lines.keys()
     for i in range(len(dataset_type_lines_keys)):
       dataset_type = dataset_type_lines_keys[i]
@@ -240,7 +257,7 @@ def create_plot(output_folder=None,
       os.makedirs(output_folder)
     
     with open(os.path.join(output_folder, py_general_filename_tex), 'wb') as f:
-      f.write(general_plot)
+      f.write(general_table)
       
     with open(os.path.join(output_folder, py_sub_filename_tex), 'wb') as f:
       f.write(tbl)
